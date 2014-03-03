@@ -1,12 +1,13 @@
 rnagios
 =======
+[![Gem Version](https://badge.fury.io/rb/rnagios.png)](http://badge.fury.io/rb/rnagios)
 
 Ruby gem to make creating Nagios plugins easier
 
 There are two types of checks you can perform that Nagios will process:
 active and NSCA checks.  Active checks are run on the Nagios
 monitoring host and actively check services.  NSCA checks are run
-by remote hosts and their output is sent back to the ` host
+by remote hosts and their output is sent back to the host
 for processing by the NSCA daemon.  Active checks are "actively" run
 by Nagios; NSCA checks are "passively" run by other servers.
 
