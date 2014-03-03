@@ -1,7 +1,7 @@
 # There are two types of checks you can perform that Nagios will process:
 # active and NSCA checks.  Active checks are run on the Nagios
 # monitoring host and actively check services.  NSCA checks are run
-# by remote hosts and their output is sent back to the ` host
+# by remote hosts and their output is sent back to the host
 # for processing by the NSCA daemon.  Active checks are "actively" run
 # by Nagios; NSCA checks are "passively" run by other servers.
 #
@@ -106,11 +106,10 @@ class Plugin
   end
 
   # Returns a Status with the message to print to STDOUT
-  # and an exit code to return if running under UNIX/Linux.  If
-  # the operating system is not UNIX/Linux, the exit_code will be
-  # zero (0).  If the measure method throws an exception or the
-  # status object is not a properly-populated Status object,
-  # then this method will throw a NagiosError.
+  # and an exit code to return if running under UNIX/Linux. If
+  # the measure method throws an exception or the status object
+  # is not a properly-populated Status object, then this method
+  # will throw a NagiosError.
   #
   # This method will run the user-overloaded measure() method.  If
   # measure() should return an uncaught exception, the exception
@@ -123,7 +122,7 @@ class Plugin
   # 
   #   class MyCheck < Nagios::Plugin
   #     def measure
-  #       stat = Nagios::ActiveStatus.new
+  #       stat = ActiveStatus.new
   #       stat.status = <...service check code goes here, returns Nagios::Status::<constant> status...>
   #       stat.message = <...service message state construction goes here...>
   #       # UNIX/Linux exit codes are taken core of for you
@@ -136,7 +135,7 @@ class Plugin
   #   exit status.exit_code  # For UNIX/Linux
   #
   # It is up to the developer to handle command-line arguments.
-  # (See the gem trollop for a good example of command-line parameter
+  # (See the trollop gem for a good example of command-line parameter
   # hadling.)  Nagios plugins usually accept "w" as a warning level and "c"
   # as a critical level, but it is up to the plugin developer if
   # these values are used in the measure method.
@@ -199,7 +198,7 @@ class Plugin
   # should return a NscaHostStatus or NscaServiceStatus
   # object.
   #
-  # The developer of must determine how to best check the
+  # The developer must determine how to best check the
   # service in question.  Below is an example of how measure()
   # should be structured.
   #
