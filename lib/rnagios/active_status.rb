@@ -68,4 +68,8 @@ class ActiveStatus < Status
     end
   end
 
+  def empty?
+    @status == UNKNOWN && (@message.nil? || @message.empty? || @message == '<EMPTY>')
+  end
+
 end

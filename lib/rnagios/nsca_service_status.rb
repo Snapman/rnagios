@@ -1,17 +1,25 @@
 # NscaServiceStatus is essentially an ActiveStatus object with
-# only an extra :passive_code attribute, so NscaServiceStatus
-# inherits from ActiveStatus and includes the NscaStatus module
-# to get the :passive_code attribute.
+# only an extra :passive_code attribute.
 class NscaServiceStatus < ActiveStatus
 
-  # This gives us the @passive_code attribute
-  include Nsca
+  # Stand-in for return code
+  attr_reader :passive_code
 
   # We call super.initialize to setup the ActiveStatus object then
   # we set @passive_code to @exit_code.  The values are exactly the
   # same
   def initialize(status=nil, message=nil)
-    super(status, message)
+    if status.nil? || (status != OK && status != WARNING && status != CRITICAL && status != UNKNOWN)
+      @status = UNKNOWN
+    else
+      @status = status
+    end
+
+    if message.nil?
+      @message = '<EMPTY>'
+    else
+      @message = message
+    end
 
     case @status
     when OK
@@ -29,7 +37,11 @@ class NscaServiceStatus < ActiveStatus
   # we set @passive_code to @exit_code.  The values are exactly the
   # same
   def status=(value)
-    super.status = value
+    if value.nil? || (value != OK && value != WARNING && value != CRITICAL && value != UNKNOWN)
+      @status = UNKNOWN
+    else
+      @status = value
+    end
 
     case @status
     when OK
@@ -44,7 +56,7 @@ class NscaServiceStatus < ActiveStatus
   end
 
   def empty?
-    @status.nil? && @message.nil? && @passive_code.nil? && @status.empty? && @message.empty? && !@passive_code.is_a?(Integer)
+    @status == UNKNOWN && (@message.nil? || @message.empty? || @message == '<EMPTY>')
   end
 
 end

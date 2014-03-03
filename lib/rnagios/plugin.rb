@@ -1,5 +1,3 @@
-require 'yaml'
-
 # There are two types of checks you can perform that Nagios will process:
 # active and NSCA checks.  Active checks are run on the Nagios
 # monitoring host and actively check services.  NSCA checks are run
@@ -44,25 +42,57 @@ class Plugin
   attr_accessor :config_file
   # Name of host to check
   attr_accessor :host
+  # Port of host to check (defaults to 80)
+  attr_accessor :port
+  # Set to true to use SSL
+  attr_accessor :use_ssl
+  # Whether we verify the host if using SSL to connect
+  attr_accessor :verify_ssl
 
   # Plugin expects a hash with the following symbols:
   #   :host         # The hostname or IP address to check (required)
-  #   :name         # The name of the service, usually starting with 'check_', defaults to <UNDEFINED>
+  #   :port         # The port on :host to check (default: 80)
+  #   :name         # The name of the service, usually starting with 'check_' (default: <UNDEFINED>)
   #   :config_file  # Path to YAML configuration file (optional)
   #   :w            # Warning level (optional, usually numeric)
   #   :c            # Critical level (optional, usually numeric)
+  #   :use_ssl      # True to use SSL, false otherwise (default: false)
+  #   :verify_ssl   # If using SSL, set to true to verify the server (default: false)
   # :host must be provided, otherwise a NagiosError will be thrown.
-  def initialize(params=nil)
+  def initialize(params={})
     if !blank?(params)
       if params[:host].nil?
-        raise Nagios::NagiosError.new('Hostname must be provided')
+        raise NagiosError.new('Hostname must be provided')
       else
         @host = params[:host]
       end
-      @name = default(params[:name]) if !params[:name].nil?
+      if params[:port].nil?
+        @port = 80
+      elsif params[:port].is_a?(String)
+        begin
+          @port = params[:port].to_i
+        rescue
+          raise NagiosError.new('Port number must be numeric')
+        end
+      else
+        @port = params[:port]
+      end
+      @name = default(params[:name])
       @config_file = params[:config_file] if !params[:config_file].nil?
       @w = params[:w] if !params[:w].nil?
       @c = params[:c] if !params[:c].nil?
+      if !params[:use_ssl].nil?
+        @use_ssl = params[:use_ssl]
+      else
+        @use_ssl = false
+      end
+      if !params[:verify_ssl].nil?
+        @verify_ssl = params[:verify_ssl]
+      else
+        @verify_ssl = false
+      end
+    else
+      raise NagiosError.new('At least hostname must be provided')
     end
   end
 
@@ -133,15 +163,21 @@ class Plugin
     # Since we can't effectively check for exceptions, we make
     # sure we get a good Status
     if !valid?(status)
-      raise Nagios::NagiosError.new('Returned status must be an instance or subclass of Nagios::Status')
+      raise NagiosError.new('Returned status must be an instance or subclass of Status')
     elsif !valid_status?(status)
-      raise Nagios::NagiosError.new('Nagios::Status must have be a valid status constant')
-    elsif status.is_a?(ActiveStatus) && !valid_exit_code?(status)
-      raise Nagios::NagiosError.new('Nagios::Status exit code is invalid')
-    elsif (status.is_a?(NscaHostStatus) || status.is_a?(NscaServiceStatus)) && !valid_passive_code?(status)
-      raise Nagios::NagiosError.new('Nagios::Status passive code is invalid')
+      raise NagiosError.new('Status must have be a valid status constant')
+    elsif status.is_a?(NscaHostStatus) && !valid_passive_code?(status)
+      raise NagiosError.new('Status passive code is invalid')
+    elsif status.is_a? ActiveStatus
+      if status.is_a? NscaServiceStatus
+        if !valid_passive_code? status 
+          raise NagiosError.new('Status passive code is invalid')
+        end
+      elsif !valid_exit_code? status
+        raise NagiosError.new('Status exit code is invalid')
+      end
     elsif blank?(status.message)
-      raise Nagios::NagiosError.new('Nagios::Status message must not be nil or empty')
+      raise NagiosError.new('Status message must not be nil or empty')
     end
 
     # Status checks out as valid -- we now format the output based on
@@ -172,16 +208,16 @@ class Plugin
   #   begin
   #     random_measure = 1 + rand(4) # Bad real-world event simulator
   #     if random_measure == 1
-  #       status = Nagios::ActiveStatus::OK
+  #       status = ActiveStatus::OK
   #       message = 'Everything looks good'
   #     elsif random_measure == 2
-  #       status = Nagios::ActiveStatus::WARNING
+  #       status = ActiveStatus::WARNING
   #       message = 'Keep an eye on this service' 
   #     elsif random_measure == 3
-  #       status = Nagios::ActiveStatus::CRITICAL
+  #       status = ActiveStatus::CRITICAL
   #       message = 'There''s a problem'
   #     else
-  #       status = Nagios::ActiveStatus::UNKNOWN
+  #       status = ActiveStatus::UNKNOWN
   #       message = 'Can''t figure out what''s going on'
   #     end
   #   rescue StandardError => e
@@ -190,24 +226,24 @@ class Plugin
   #     # a Nagios plugin, otherwise Nagios will handle it as a
   #     # failure and you may be spammed with unnecessary notifications
   #     # for something that should only merit a warning
-  #     status = Nagios::ActiveStatus::WARNING
+  #     status = ActiveStatus::WARNING
   #     message = 'Possibly recoverable error occurred'
   #   rescue Exception => e
   #     # It is wise to account for exceptions you don't anticipate
   #     # and create a status that is more meaningful for your service.
   #     # For your situation, unanticipated errors may be critical, or
   #     # they may be worth only a warning; you decide
-  #     status = Nagios::ActiveStatus::CRITICAL
+  #     status = ActiveStatus::CRITICAL
   #     message = 'Something we didn''t anticipate occurred'
   #   ensure
   #     # Make sure the returned status has something in it if all else fails
-  #     status = Nagios::ActiveStatus::UNKNOWN
+  #     status = ActiveStatus::UNKNOWN
   #     message = 'Don''t know what happened'
   #   end
-  #   Nagios::ActiveStatus.new(status, message)
+  #   ActiveStatus.new(status, message)
   def measure
     # Overload this method to populate the status object
-    raise Nagios::NagiosError.new('measure method not implemented')
+    raise NagiosError.new('Call to measure should not invoke base class measure method; measure method should be overridden')
   end
 
 private
@@ -229,30 +265,6 @@ private
       end
     end
 
-    def blank?(value)
-      value.nil? || value.empty?
-    end
-
-    # Check for Windows OS
-    def windows?
-      (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
-    end
-
-    # Check for Mac OS
-    def mac?
-     (/darwin/ =~ RUBY_PLATFORM) != nil
-    end
-
-    # Check for UNIX or UNIX-like OS
-    def unix?
-      !OS.windows?
-    end
-
-    # Check for Linux
-    def linux?
-      OS.unix? and not OS.mac?
-    end
-
     def format_active_service_check(status, start_time, end_time)
       @name + ' ' + status.to_s + ' | time=' + (end_time - start_time).to_s + ';;;' + @w.to_s + ';' + @c.to_s
     end
@@ -270,7 +282,7 @@ private
     end
 
     def valid?(status)
-      blank?(status) || !status.is_a?(Nagios::Status) ? false : true
+      blank?(status) || !status.is_a?(Status) ? false : true
     end
 
     def valid_status?(status)

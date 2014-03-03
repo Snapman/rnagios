@@ -19,13 +19,13 @@ returns a fully-populated NscaHostStatus or NscaServiceStatus object.
 and parse their output; this class does not attempt to be everything
 to everyone.)
   
-Plugin handles the formatting, and provides the appropriate
+RNagios handles the formatting, and provides the appropriate
 exit code so Nagios will process it correctly.  When running on
 UNIX/Linux, Nagios will check the exit codes along with the string
 in the status message to determine how to handle it.  Under Windows,
 Nagios only cares about the strings in the status message.
 
-Plugin allows you to use an optional configuration file in case your
+RNagios allows you to use an optional configuration file in case your
 plugin requires access to multiple configuration parameters.  If
 you supply a configuration file, it should be a YAML file, and it will
 be parsed in the check method before the measure method is called.

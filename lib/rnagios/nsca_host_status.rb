@@ -8,8 +8,8 @@
 # exit codes, but we use the @passive_code attribute anyway for clarity.
 class NscaHostStatus < Status
 
-  # This gives us the @passive_code attribute
-  include Nsca
+  # Stand-in for host status
+  attr_reader :passive_code
 
   # Host is up and available
   UP = 'UP'
@@ -32,7 +32,7 @@ class NscaHostStatus < Status
     if status.nil? || (status != UP && status != DOWN && status != UNREACHABLE)
       @status = UNREACHABLE
     else
-      @status = status if !status.nil?
+      @status = status
     end
 
     if message.nil?
@@ -51,9 +51,10 @@ class NscaHostStatus < Status
     end
   end
 
-  # if status is not given, it will default to UNREACHABLE
+  # If status is not given, it will default to UNREACHABLE.  Changing
+  # the status will change the passive_code accordingly
   def status=(value)
-    if status.nil? || (status != UP && status != DOWN && status != UNREACHABLE)
+    if value.nil? || (value != UP && value != DOWN && value != UNREACHABLE)
       @status = UNREACHABLE
     else
       @status = value
@@ -70,7 +71,7 @@ class NscaHostStatus < Status
   end
 
   def empty?
-    @status.nil? && @message.nil? && @passive_code.nil? && @status.empty? && @message.empty? && !@passive_code.is_a?(Integer)
+    @status == UNREACHABLE && (@message.nil? || @message.empty? || @message == '<EMPTY>')
   end
 
 end

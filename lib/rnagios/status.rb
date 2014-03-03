@@ -2,11 +2,17 @@
 class Status
 
   # A Nagios::Status constant
-  attr_reader :status
+  attr_accessor :status
   # UNIX/Linux exit code
   attr_reader :exit_code
   # The status output from the measure() method
   attr_accessor :message
+
+  def initialize(status=nil, message=nil)
+    @status = status if !status.nil? && !status.empty?
+    @message = message if !message.nil? && !message.empty?
+    @exit_code = 0
+  end
 
   # Formats the given message for output to Nagios
   def to_s
@@ -16,7 +22,7 @@ class Status
   end
 
   def empty?
-    @status.nil? && @message.nil? && @exit_code.nil? && @status.empty? && @message.empty? && !@exit_code.is_a?(Integer)
+    (@status.nil? && @message.nil?) || (@status.empty? && @message.empty?)
   end
 
 end

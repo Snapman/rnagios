@@ -1,16 +1,14 @@
 require 'test/unit'
 require 'rnagios'
 
-class ActiveStatusTest < Test::Unit::TestCase
-  def test_active_check
-    assert_equal "hello world", ActiveStatus.hi("english")
+class NagiosErrorTest < Test::Unit::TestCase
+
+  def test_initialize
+    error = NagiosError.new
+    assert_equal error.message, 'NagiosError'
+
+    error = NagiosError.new 'Error occurred'
+    assert_equal error.message, 'Error occurred'
   end
 
-  def test_nsca_host_check
-    assert_equal "hello world", ActiveStatus.hi("ruby")
-  end
-
-  def test_nsca_service_check
-    assert_equal "hola mundo",  ActiveStatus.hi("spanish")
-  end
 end
