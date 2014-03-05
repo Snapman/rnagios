@@ -271,13 +271,13 @@ private
     # NSCA check results are different from active check results
     # [<timestamp>] PROCESS_SERVICE_CHECK_RESULT;<host_name>;<svc_description>;<return_code>;<plugin_output>
     def format_passive_service_check(status)
-      '[' + Time.now.to_i.to_s + '] PROCESS_SERVICE_CHECK_RESULT;' + @host + ';' + @name + ';' + status.passive_code.to_s + ';' + status.message
+      "#{@host}\t#{@name}\t#{status.passive_code}\t#{status.message}"
     end
 
     # NSCA check results are different from active check results
     # [<timestamp>] PROCESS_HOST_CHECK_RESULT;<host_name>;<host_status>;<plugin_output>
     def format_passive_host_check(status)
-      '[' + Time.now.to_i.to_s + '] PROCESS_HOST_CHECK_RESULT;' + @host + ';' + status.passive_code.to_s + ';' + status.message
+      "#{@host}\t#{status.passive_code}\t#{status.message}"
     end
 
     def valid?(status)
