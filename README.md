@@ -33,3 +33,5 @@ be parsed in the check method before the measure method is called.
 measure() can then use the @config attribute to access configuration
 parameters.  The configuration file is expected to be in the same
 directory as the plugin.
+
+[How to use Nagios](https://github.com/Snapman/rnagios/wiki/RNagios)
