@@ -146,7 +146,11 @@ class Plugin
 
     # If there is a config file, load it
     if !blank? @config_file
-      @config = YAML.load_file(@config_file)
+      begin
+        @config = YAML.load_file(@config_file)
+      rescue Psych::SyntaxError => e
+        raise NagiosError.new('Error occurred while trying to parse YAML config file; please verify that config file is valid YAML')
+      end
     end
 
     # measure() is where the magic happens.  measure() should
