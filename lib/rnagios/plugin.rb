@@ -119,8 +119,8 @@ class Plugin
   #
   # Scripts should call this method at the very end.  The general
   # flow of a script running on UNIX/Linux should be as follows:
-  # 
-  #   class MyCheck < Nagios::Plugin
+  #
+  #   class MyCheck < Plugin
   #     def measure
   #       stat = ActiveStatus.new
   #       stat.status = <...service check code goes here, returns Nagios::Status::<constant> status...>
@@ -161,7 +161,8 @@ class Plugin
     status = measure
 
     # Mark the end time for Nagios performance stats
-    end_time = Time.now        
+    end_time = Time.now
+    time_took = end_time - start_time
 
     # Since we can't effectively check for exceptions, we make
     # sure we get a good Status
@@ -173,7 +174,7 @@ class Plugin
       raise NagiosError.new('Status passive code is invalid')
     elsif status.is_a? ActiveStatus
       if status.is_a? NscaServiceStatus
-        if !valid_passive_code? status 
+        if !valid_passive_code? status
           raise NagiosError.new('Status passive code is invalid')
         end
       elsif !valid_exit_code? status
@@ -183,13 +184,31 @@ class Plugin
       raise NagiosError.new('Status message must not be nil or empty')
     end
 
-    # Status checks out as valid -- we now format the output based on
-    # the type of Status received
+    # Status checks out as valid -- we now check the warning and critical
+    # times and format the output based on the type of Status received
     if status.is_a? NscaHostStatus
       status.message = format_passive_host_check(status)
     elsif status.is_a? NscaServiceStatus
+      if valid_value_w && valid_value_c
+        if time_took >= @w && time_took < @c && status.status != ActiveStatus::WARNING
+          status.status = ActiveStatus::WARNING
+          status.message += '; check time >= ' + @w
+        elsif time_took >= @c && status.status != ActiveStatus::CRITICAL
+          status.status = ActiveStatus::CRITICAL
+          status.message += '; check time >= ' + @c
+        end
+      end
       status.message = format_passive_service_check(status)
     else
+      if valid_value_w && valid_value_c
+        if time_took >= @w && time_took < @c && status.status != ActiveStatus::WARNING
+          status.status = ActiveStatus::WARNING
+          status.message += '; check time >= ' + @w
+        elsif time_took >= @c && status.status != ActiveStatus::CRITICAL
+          status.status = ActiveStatus::CRITICAL
+          status.message += '; check time >= ' + @c
+        end
+      end
       status.message = format_active_service_check(status, start_time, end_time)
     end
 
@@ -215,7 +234,7 @@ class Plugin
   #       message = 'Everything looks good'
   #     elsif random_measure == 2
   #       status = ActiveStatus::WARNING
-  #       message = 'Keep an eye on this service' 
+  #       message = 'Keep an eye on this service'
   #     elsif random_measure == 3
   #       status = ActiveStatus::CRITICAL
   #       message = 'There''s a problem'
@@ -369,4 +388,11 @@ private
       end
     end
 
+    def valid_value_w()
+      @w.is_a?(Integer) && @w > 0
+    end
+
+    def valid_value_c()
+      @c.is_a?(Integer) && @c > 0
+    end
 end

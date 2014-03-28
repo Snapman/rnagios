@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'rnagios'
-  s.version     = '0.0.3'
-  s.date        = '2014-03-05'
+  s.version     = '0.0.5'
+  s.date        = '2014-03-28'
   s.summary     = "RNagios"
   s.description = "Make your own plugins in Ruby for Nagios to run on the Nagios server or as NSCA plugins on remote servers."
   s.authors     = ["Roger A. Rubio"]
