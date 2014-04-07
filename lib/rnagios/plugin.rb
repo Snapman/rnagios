@@ -192,10 +192,10 @@ class Plugin
       if valid_value_w && valid_value_c
         if time_took >= @w && time_took < @c && status.status != ActiveStatus::WARNING
           status.status = ActiveStatus::WARNING
-          status.message += '; check time >= ' + @w
+          status.message += '; check time >= ' + @w.to_s
         elsif time_took >= @c && status.status != ActiveStatus::CRITICAL
           status.status = ActiveStatus::CRITICAL
-          status.message += '; check time >= ' + @c
+          status.message += '; check time >= ' + @c.to_s
         end
       end
       status.message = format_passive_service_check(status)
@@ -203,10 +203,10 @@ class Plugin
       if valid_value_w && valid_value_c
         if time_took >= @w && time_took < @c && status.status != ActiveStatus::WARNING
           status.status = ActiveStatus::WARNING
-          status.message += '; check time >= ' + @w
+          status.message += '; check time >= ' + @w.to_s
         elsif time_took >= @c && status.status != ActiveStatus::CRITICAL
           status.status = ActiveStatus::CRITICAL
-          status.message += '; check time >= ' + @c
+          status.message += '; check time >= ' + @c.to_s
         end
       end
       status.message = format_active_service_check(status, start_time, end_time)
